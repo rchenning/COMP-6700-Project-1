@@ -1,7 +1,8 @@
 # Ignore build artifacts and generated files
 build/
-dist/
 outputs/
-*.exe
-*.pyc
 __pycache__/
+*.pyc
+dist/
+!dist/
+!dist/**/*.exe
