@@ -8,36 +8,26 @@ from PyPDF2 import PdfReader
 from extractor.llm_utils import run_llm_batch
 from extractor.utils import extract_json_block
 
-# ---------------------------
-# 1. Input validation + loader
-# ---------------------------
-def load_documents(file1: str, file2: str):
-    if not os.path.exists(file1) or not os.path.exists(file2):
-        raise FileNotFoundError("One or both input files do not exist")
+# Input validation + loader
+def load_document(path: str):
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Input file does not exist: {path}")
 
-    def read_pdf(path):
-        try:
-            reader = PdfReader(path)
-            print(f"Loading {path}: {len(reader.pages)} pages")
-            text = ""
-            for i, page in enumerate(reader.pages):
-                try:
-                    page_text = page.extract_text() or ""
-                    text += page_text
-                except Exception as e:
-                    print(f"Warning: Failed to extract text from page {i+1} of {path}: {e}")
-                    continue
-            return text
-        except Exception as e:
-            print(f"Error loading PDF {path}: {e}")
-            return ""
+    try:
+        reader = PdfReader(path)
+        print(f"Loading {path}: {len(reader.pages)} pages")
+        text = ""
+        for i, page in enumerate(reader.pages):
+            try:
+                text += page.extract_text() or ""
+            except Exception as e:
+                print(f"Warning: Failed on page {i+1} of {path}: {e}")
+        return text
+    except Exception as e:
+        print(f"Error loading PDF {path}: {e}")
+        return ""
 
-    return read_pdf(file1), read_pdf(file2)
-
-
-# ---------------------------
-# 2. Prompt Builders
-# ---------------------------
+# Prompt Builders
 def build_zero_shot_prompt(doc_text: str) -> str:
     return f"""
 Extract key data elements (KDEs) from the security requirements text.
@@ -155,10 +145,7 @@ Text:
 {doc_text}
 """
 
-
-# ---------------------------
-# 3. Text preprocessing
-# ---------------------------
+# Text preprocessing
 def filter_relevant_text(doc_text: str) -> str:
     """
     Filter obvious junk but keep most meaningful text.
@@ -240,10 +227,7 @@ def chunk_text(text: str, chunk_size: int = 1800, overlap: int = 100):
 
     return chunks
 
-
-# ---------------------------
-# 4. KDE Extraction
-# ---------------------------
+# KDE Extraction
 def extract_kdes(doc_text: str, prompt_fn, filename: str = ""):
     """
     Extract KDEs using JSON-first parsing, then convert to YAML-safe structure.
@@ -359,9 +343,7 @@ def extract_kdes(doc_text: str, prompt_fn, filename: str = ""):
 
             parsed = None
 
-            # -------------------------
-            # ✅ Try JSON parse
-            # -------------------------
+            # Try JSON parse
             try:
                 parsed = json.loads(cleaned)
 
@@ -379,9 +361,9 @@ def extract_kdes(doc_text: str, prompt_fn, filename: str = ""):
                 except:
                     continue
 
-            # -------------------------
-            # ✅ Normalize structure
-            # -------------------------
+            
+            # Normalize structure
+            
             if isinstance(parsed, dict):
                 parsed = [parsed]
 
@@ -391,9 +373,9 @@ def extract_kdes(doc_text: str, prompt_fn, filename: str = ""):
 
             all_outputs.append(cleaned)
 
-            # -------------------------
-            # ✅ Normalize KDEs
-            # -------------------------
+            
+            # Normalize KDEs
+            
             for item in parsed:
                 if not isinstance(item, dict):
                     continue
@@ -443,7 +425,7 @@ def extract_kdes(doc_text: str, prompt_fn, filename: str = ""):
 
     all_kdes = [k for k in all_kdes if is_valid_kde(k["name"])]
 
-    # ✅ Final cleanup
+    # Final cleanup
     final_kdes = clean_kdes(all_kdes)
     return final_kdes, last_prompt, full_output
 
@@ -457,7 +439,7 @@ def clean_kdes(kdes):
     seen = set()
 
     for item in kdes:
-        # ✅ Only process dicts with name & requirements
+        # Only process dicts with name & requirements
         if not isinstance(item, dict):
             continue
         name = item.get("name")
@@ -481,17 +463,12 @@ def clean_kdes(kdes):
 
     return final
 
-# ---------------------------
-# 5. Save YAML
-# ---------------------------
+# Save YAML
 def save_yaml(data, filename):
     with open(filename, "w", encoding="utf-8") as f:
         yaml.dump(data, f, sort_keys=False, allow_unicode=True)
 
-
-# ---------------------------
-# 6. Logging
-# ---------------------------
+# Logging
 def log_llm_output(llm_name, prompt, prompt_type, output, file_path):
     with open(file_path, "a", encoding="utf-8") as f:
         f.write(f"""
