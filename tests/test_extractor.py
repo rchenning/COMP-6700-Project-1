@@ -7,7 +7,7 @@ from extractor.extractor import (
     build_cot_prompt,
     chunk_text,
     extract_kdes,
-    load_documents,
+    load_document,
     log_llm_output,
     save_yaml
 )
@@ -16,13 +16,12 @@ from extractor.extractor import (
 def test_load_documents():
     # Test with existing files (assuming data exists)
     try:
-        doc1, doc2 = load_documents("data/cis-r1.pdf", "data/cis-r2.pdf")
+        doc1 = load_document("data/cis-r1.pdf")
         assert len(doc1) > 0
-        assert len(doc2) > 0
     except FileNotFoundError:
         # If files don't exist, test error handling
         try:
-            load_documents("nonexistent.pdf", "nonexistent2.pdf")
+            load_document("nonexistent.pdf")
             assert False, "Should raise FileNotFoundError"
         except FileNotFoundError:
             pass
