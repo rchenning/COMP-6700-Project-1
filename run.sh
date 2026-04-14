@@ -12,11 +12,8 @@ fi
 FILE1=$1
 FILE2=$2
 
-# Upgrade pip (optional but good practice)
-pip install --upgrade pip
-
 # Install dependencies
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 
 # Run your program
 python run.py "$FILE1" "$FILE2"
