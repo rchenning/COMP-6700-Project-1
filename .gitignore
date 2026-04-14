@@ -4,5 +4,3 @@ outputs/
 __pycache__/
 *.pyc
 dist/
-!dist/
-!dist/**/*.exe
